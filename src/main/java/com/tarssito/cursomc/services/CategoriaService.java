@@ -3,10 +3,12 @@ package com.tarssito.cursomc.services;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import com.tarssito.cursomc.domain.Categoria;
 import com.tarssito.cursomc.repositories.CategoriaRepository;
+import com.tarssito.cursomc.services.exceptions.DataIntegrityException;
 import com.tarssito.cursomc.services.exceptions.ObjectNotFoundException;
 
 @Service
@@ -29,5 +31,15 @@ public class CategoriaService {
 	public Categoria update(Categoria categoria) {
 		find(categoria.getId());
 		return repository.save(categoria);
+	}
+
+	public void delete(Integer id) {
+		find(id);
+		try {
+			repository.deleteById(id);
+		} catch (DataIntegrityViolationException e) {
+			throw new DataIntegrityException("Não é possível excluir uma categoria que possuí produtos");
+		}
+
 	}
 }
