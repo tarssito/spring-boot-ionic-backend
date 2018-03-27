@@ -6,11 +6,13 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.tarssito.cursomc.domain.Cliente;
 import com.tarssito.cursomc.domain.ItemPedido;
 import com.tarssito.cursomc.domain.PagamentoComBoleto;
 import com.tarssito.cursomc.domain.Pedido;
 import com.tarssito.cursomc.domain.Produto;
 import com.tarssito.cursomc.domain.enums.EstatoPagamento;
+import com.tarssito.cursomc.repositories.ClienteRepository;
 import com.tarssito.cursomc.repositories.ItemPedidoRepository;
 import com.tarssito.cursomc.repositories.PagamentoRepository;
 import com.tarssito.cursomc.repositories.PedidoRepository;
@@ -33,6 +35,9 @@ public class PedidoService {
 	private ItemPedidoRepository itemPedidoRepository;
 	
 	@Autowired
+	private ClienteRepository clienteRepository;
+	
+	@Autowired
 	private BoletoService boletoService;
 	
 	public Pedido find(Integer id) {
@@ -44,6 +49,10 @@ public class PedidoService {
 	public Pedido insert(Pedido pedido) {
 		pedido.setId(null);
 		pedido.setInstante(new Date());
+		
+		Cliente cliente = clienteRepository.findById(pedido.getCliente().getId()).get();
+		pedido.setCliente(cliente);
+		
 		pedido.getPagamento().setEstado(EstatoPagamento.PENDENTE);
 		pedido.getPagamento().setPedido(pedido);
 		if (pedido.getPagamento() instanceof PagamentoComBoleto) {
@@ -56,13 +65,16 @@ public class PedidoService {
 		
 		for (ItemPedido ip : pedido.getItens()) {
 			ip.setDesconto(0.0);
+			
 			Produto produto = produtoRepository.findById(ip.getProduto().getId()).get();
-			ip.setPreco(produto.getPreco());
+			ip.setProduto(produto);
+			
+			ip.setPreco(ip.getProduto().getPreco());
 			ip.setPedido(pedido);
 		}
 		
 		itemPedidoRepository.saveAll(pedido.getItens());
-		
+		System.out.println(pedido);
 		return pedido;
 	}
 }
