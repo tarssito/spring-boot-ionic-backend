@@ -1,10 +1,12 @@
 package com.tarssito.cursomc.services;
 
+import java.awt.image.BufferedImage;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,7 +35,7 @@ public class ClienteService {
 
 	@Autowired
 	private BCryptPasswordEncoder passwordEncoder;
-	
+
 	@Autowired
 	private ClienteRepository repository;
 
@@ -42,10 +44,16 @@ public class ClienteService {
 
 	@Autowired
 	private EnderecoRepository enderecoRepository;
-	
+
 	@Autowired
 	private S3Service s3Service;
-	
+
+	@Autowired
+	private ImageService imageService;
+
+	@Value("${img.prefix.client.profile}")
+	private String prefix;
+
 	public Cliente find(Integer id) {
 		UserSS user = UserService.authenticated();
 		if (user == null || !user.hasRole(Perfil.ADMIN) && !id.equals(user.getId())) {
@@ -103,15 +111,15 @@ public class ClienteService {
 
 		cli.getEnderecos().add(endereco);
 		cli.getTelefones().add(clienteDTO.getTelefone1());
-		
-		if(clienteDTO.getTelefone2() != null) {
+
+		if (clienteDTO.getTelefone2() != null) {
 			cli.getTelefones().add(clienteDTO.getTelefone2());
 		}
-		
-		if(clienteDTO.getTelefone3() != null) {
+
+		if (clienteDTO.getTelefone3() != null) {
 			cli.getTelefones().add(clienteDTO.getTelefone3());
 		}
-		
+
 		return cli;
 	}
 
@@ -125,14 +133,11 @@ public class ClienteService {
 		if (user == null) {
 			throw new AuthorizationException("Acesso negado");
 		}
+
+		BufferedImage jpgImage = imageService.getJpgImageFromFile(multipartFile);
+		String fileName = prefix + user.getId() + ".jpg";
 		
-		URI uri = s3Service.uploadFile(multipartFile);
-		
-		Cliente cliente = repository.findById(user.getId()).get();
-		cliente.setImageUrl(uri.toString());
-		repository.save(cliente);
-		
-		return uri;
+		return s3Service.uploadFile(imageService.getInputStream(jpgImage, "jpg"), fileName, "image");
 	}
-	
+
 }
