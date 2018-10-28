@@ -16,6 +16,8 @@ import com.tarssito.cursomc.security.UserSS;
 import com.tarssito.cursomc.services.AuthService;
 import com.tarssito.cursomc.services.UserService;
 
+import io.swagger.annotations.ApiOperation;
+
 @RestController
 @RequestMapping(value = "/auth")
 public class AuthResource {
@@ -26,6 +28,7 @@ public class AuthResource {
 	@Autowired
 	private AuthService service;
 	
+	@ApiOperation(value="Atualiza o token")
 	@RequestMapping(value = "/refresh_token", method = RequestMethod.POST)
 	public ResponseEntity<Void> refreshToken(HttpServletResponse response) {
 		UserSS user = UserService.authenticated();
